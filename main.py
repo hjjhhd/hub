@@ -1,9 +1,11 @@
 import time
+import hub
 
 from pyb import LED
 
 
 led = LED(3)
+uarthub = hub.uart1_read
 
 
 def blink_led():
