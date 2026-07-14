@@ -47,6 +47,7 @@ class uart_hub:
 
     # staticmethod 表示该工具函数不访问 self 或类成员，只依赖传入的 UART 和数据。
     @staticmethod
+
     # 循环写入数据，避免 UART 单次 write() 未写完时丢失剩余字节。
     def _write_all(uart, data):
         """Write every byte, including when a UART write is partial."""
@@ -61,14 +62,33 @@ class uart_hub:
 
         return True
 
+    def uart2_to_uart1(self):
+        """Forward all pending UART2 data to UART1."""
+        if not self.uart2.any():
+            return False
+
+        data = self.uart2.read()
+        if not data:
+            return False
+
+        self._wait_tx_idle(self.uart1)
+        sent = self._write_all(self.uart1, data)
+        self._wait_tx_idle(self.uart1, len(data))
+
+        return sent
+
     # 检查 UART1 数据帧头；帧头为 0x7A 时完整转发至 UART2 和 UART3。
     def send(self):
         """Forward a UART1 frame starting with 0x7A to UART2 and UART3."""
         global uart1_read
-
-        data = self.uart1_read()
-        if not data or data[0] != 0x7A:
-            return False
+        data = self.uart1_read()  # 读取 UART1 当前缓存的数据。
+        if not data:  # 没有收到任何数据时不转发。
+            return False  # 返回未发送状态。
+        frame_start = data.find(b"\x7A")  # 在当前读取块中搜索协议帧头。
+        if frame_start < 0:  # 当前数据中不存在有效帧头时丢弃该块。
+            uart1_read = None  # 清除无效缓存，避免下次重复处理。
+            return False  # 返回未发送状态。
+        data = data[frame_start:]  # 从帧头开始转发后续数据。
 
         # Both output ports must be idle before starting a new frame.
         self._wait_tx_idle(self.uart2)
@@ -82,7 +102,7 @@ class uart_hub:
         self._wait_tx_idle(self.uart3, len(data))
 
         if sent_to_uart2 and sent_to_uart3:
-            print(sent_to_uart2)
+            print((" ".join(["%02X" % byte for byte in data])))
             uart1_read = None
             return True
 
