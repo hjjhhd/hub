@@ -8,6 +8,16 @@ from pyb import UART
 # 模块级变量：保存 UART1 最近一次接收到的原始字节数据。
 uart1_read = None
 
+class Command:
+    def __init__(self):
+        pass
+
+    def get_bcc(frame_byte):    #计算BCC校验码
+        bcc = 0
+        for b in frame_byte:
+            bcc ^= b
+        return bcc
+
 
 # UART 数据转发管理类，负责 UART1 接收以及向 UART2、UART3 转发。
 class uart_hub:

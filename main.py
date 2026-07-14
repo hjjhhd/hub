@@ -1,11 +1,12 @@
 import time
 
 from pyb import LED
-from hub import uart_hub
+import hub
 
 
 led = LED(3)
-uarthub = uart_hub()
+uarthub = hub.uart_hub()
+command = hub.Command()
 
 
 def main():
