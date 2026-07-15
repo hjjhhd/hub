@@ -148,8 +148,11 @@ class SerialHub:
         if not state["online"]:
             return
         state["last_seen"] = ticks_ms()
+        body = frame["body"]
+        if body.get("event") == "gimbal.move_multiturn":
+            self.services.dispatch_event("gimbal.move_multiturn", body.get("data", {}))
         if self.on_module_event is not None:
-            self.on_module_event(channel.name, frame["body"])
+            self.on_module_event(channel.name, body)
 
     def _handle_hello(self, channel, frame):
         args = frame["body"].get("args", {})

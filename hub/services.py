@@ -74,6 +74,17 @@ class ServiceRegistry:
             return
         channel.reply(frame["request_id"], STATUS_OK, {"data": result})
 
+    def dispatch_event(self, operation, args):
+        """Run an explicitly allowed one-way service without sending a reply."""
+        handler = self._handlers.get(operation)
+        if handler is None or not isinstance(args, dict):
+            return False
+        try:
+            handler(args, None)
+        except (ValueError, Exception):
+            return False
+        return True
+
 
 class PeripheralAdapter:
     """Base class for wrapping an existing UART peripheral library.
